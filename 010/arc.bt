@@ -1,0 +1,40 @@
+//------------------------------------------------
+//--- 010 Editor v9.0.1 Binary Template
+//
+//      File: 
+//   Authors: 
+//   Version: 
+//   Purpose: 
+//  Category: 
+// File Mask: 
+//  ID Bytes: 
+//   History: 
+//------------------------------------------------
+LittleEndian();
+//------------------------------------------------
+typedef struct {
+	char ARC0[4];
+    uint fileSize <format=hex>;
+    uint txtCnt <format=hex>;
+    uint txtOffset <format=hex>;
+    uint unk3 <format=hex>;
+    uint unk4 <format=hex>;
+    uint sec2Count <format=hex>;
+    uint sec1Size <format=hex>;
+} header <bgcolor=cLtRed>;
+
+header HDR;
+char sec1[HDR.sec1Size] <bgcolor=cLtBlue>;
+local int padding = FTell() % 0x4;
+if (padding > 0)
+    padding = 0x4 - padding;
+FSeek (FTell() + padding);
+
+int sec2[HDR.sec2Count];
+char sec3[HDR.sec2Count * 0x80];
+uint postsec3;
+
+FSeek (HDR.txtOffset + 0x10);
+int txtSize <format=hex>;
+char txt[txtSize]<bgcolor=cLtRed>;
+int postTxt;

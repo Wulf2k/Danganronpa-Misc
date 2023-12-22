@@ -137,26 +137,17 @@ class SPCEntry {
     [uint32]$DecompSize
     [uint32]$NameLen
     [string]$Name
-    [byte[]]$CompBytes
+    [byte[]]$Data
     [void] Read($reader) {
-		Write-Host "CompFlag pos: " $reader.BaseStream.Position.ToString("X")
         $this.CompFlag = $reader.ReadInt16()
         $this.UnkFlag = $reader.ReadInt16()
         $this.CompSize = $reader.ReadUInt32()
         $this.DecompSize = $reader.ReadUInt32()
-		
-		Write-Host "Name Length pos: " $reader.BaseStream.Position.ToString("X")
         $this.NameLen = $reader.ReadUInt32()
-		
-		Write-Host "Name Length: " $this.NameLen
         $reader.BaseStream.Position += 0x10
-        $this.Name = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes($this.NameLen))
-		
-		Write-Host "Name: " $this.Name
-        $reader.BaseStream.Position += (0x10 - ($reader.BaseStream.Position % 0x10))
-        
-		Write-Host "CompBytes pos: " $reader.BaseStream.Position.ToString("X")
-		$this.CompBytes = $reader.ReadBytes($this.CompSize)
+        $this.Name = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes($this.NameLen))		
+        $reader.BaseStream.Position += (0x10 - ($reader.BaseStream.Position % 0x10))        
+		$this.Data = $reader.ReadBytes($this.CompSize)
 		$pad = (0x10 - ($reader.BaseStream.Position % 0x10))
 		if ($pad -eq 0x10) { $pad = 0 }
         $reader.BaseStream.Position += $pad
@@ -190,8 +181,22 @@ if (-not (Test-Path $subfolderPath)) {
     New-Item -ItemType Directory -Path $subfolderPath
 }
 
+$idx = 0
 foreach ($entry in $entries) {
-    $decompressedData = Decompress $entry.CompBytes
-    $outfilePath = [System.IO.Path]::Combine($subfolderPath, $entry.name)
-    [System.IO.File]::WriteAllBytes($outfilePath, $decompressedData)
+	Write-Host "Idx: $idx, Name: " $entry.name
+	$idx++
+	$outfilePath = [System.IO.Path]::Combine($subfolderPath, $entry.name)
+	
+	
+	if ($entry.compFlag -eq 1) {
+		[System.IO.File]::WriteAllBytes($outfilePath, $entry.Data)	
+	}
+	if ($entry.compFlag -eq 2) {
+		$decompressedData = Decompress $entry.Data
+		[System.IO.File]::WriteAllBytes($outfilePath, $decompressedData)	
+	}
+	if ($entry.compFlag -ge 3) {
+		Write-Host "Compression Flag Unhandled."
+	}   
 }
+pause

@@ -1,0 +1,47 @@
+//------------------------------------------------
+//--- 010 Editor v9.0.1 Binary Template
+//
+//      File: 
+//   Authors: 
+//   Version: 
+//   Purpose: 
+//  Category: 
+// File Mask: 
+//  ID Bytes: 
+//   History: 
+//------------------------------------------------
+LittleEndian();
+//------------------------------------------------
+void Pad( int d )
+{
+	local int padding = FTell() % d;
+	if (padding > 0)
+		padding = d - padding;
+	FSeek (FTell() + padding);
+}
+
+typedef struct {
+	char SPC[4];
+	FSeek(FTell()+0x24);
+    uint numfiles;
+	uint unk2c;
+	FSeek(FTell()+0x10);
+	char Root[4];
+	Pad(0x10);
+} header <bgcolor=cLtRed>;
+
+typedef struct {
+	short compFlag;
+	short unkFlag;
+	uint compSize <format=hex>;
+	uint decompSize <format=hex>;
+	uint nameLen;
+	FSeek(FTell()+0x10);
+	char Name[nameLen + 1];
+	Pad(0x10);
+	char compBytes[compSize];
+	Pad(0x10);
+} spcEntry <bgcolor=cLtBlue, read=(Name)>;
+
+header HDR;
+spcEntry Entry[HDR.numfiles] <optimize=false>;
